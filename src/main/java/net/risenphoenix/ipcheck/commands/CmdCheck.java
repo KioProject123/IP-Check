@@ -35,6 +35,7 @@ import net.risenphoenix.commons.commands.Command;
 import net.risenphoenix.commons.commands.CommandType;
 import net.risenphoenix.ipcheck.IPCheck;
 import net.risenphoenix.ipcheck.objects.ReportObject;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.permissions.Permission;
 
@@ -51,7 +52,9 @@ public class CmdCheck extends Command {
 
     @Override
     public void onExecute(CommandSender sender, String[] args) {
-        new ReportObject(IPCheck.getInstance()).onExecute(sender, args[0]);
+        Bukkit.getScheduler().runTaskAsynchronously(IPCheck.getInstance(), () -> {
+            new ReportObject(IPCheck.getInstance()).onExecute(sender, args[0]);
+        });
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017 Jacob Keep (Jnk1296). All rights reserved.
+ * Copyright © 2014 Jacob Keep (Jnk1296). All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,44 +28,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-package net.risenphoenix.ipcheck.stores;
+package net.risenphoenix.commons.stores;
 
 import net.risenphoenix.commons.Plugin;
-import net.risenphoenix.commons.commands.CommandType;
-import net.risenphoenix.commons.stores.CommandStore;
-import net.risenphoenix.ipcheck.commands.*;
 
-public class CmdStore extends CommandStore {
+import java.util.HashMap;
+import java.util.Map;
 
-    public CmdStore(final Plugin plugin) {
+public class LocalizationStore extends Store {
+
+    private Map<String,String> values;
+
+    public LocalizationStore(final Plugin plugin) {
         super(plugin);
+        this.values = new HashMap<String, String>();
+        initializeStore();
     }
 
-    @Override
-    public void initializeStore() {
-        // Help Command
-        this.add(
-                new CmdHelp(plugin, new String[]{"ipc", "help", "VAR_ARG_OPT"},
-                        CommandType.VARIABLE));
+    public final void add(String key, String value) {
+        this.values.put(key, value);
+    }
 
-        // Scan Command
-        this.add(
-                new CmdScan(plugin, new String[]{"ipc", "scan"},
-                        CommandType.STATIC));
-
-        // Purge Command
-        this.add(
-                new CmdPurge(plugin, new String[]{"ipc", "purge", "VAR_ARG"},
-                        CommandType.VARIABLE));
-
-        // Reload Command
-        this.add(
-                new CmdReload(plugin, new String[]{"ipc", "reload"},
-                        CommandType.STATIC));
-
-        // ROOT COMMAND
-        this.add(
-                new CmdCheck(plugin, new String[]{"ipc", "VAR_ARG"},
-                        CommandType.VARIABLE));
+    public final Map<String,String> getValues() {
+        return this.values;
     }
 }

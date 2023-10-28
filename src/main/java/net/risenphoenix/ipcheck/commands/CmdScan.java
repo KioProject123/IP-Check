@@ -37,6 +37,7 @@ import net.risenphoenix.ipcheck.IPCheck;
 import net.risenphoenix.ipcheck.objects.IPObject;
 import net.risenphoenix.ipcheck.objects.UserObject;
 import net.risenphoenix.ipcheck.util.ListFormatter;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -63,6 +64,8 @@ public class CmdScan extends Command {
 
     @Override
     public void onExecute(CommandSender sender, String[] args) {
+        Bukkit.getScheduler().runTaskAsynchronously(IPCheck.getInstance(), () -> {
+
         // Method Variables
         Player[] online = ipc.getOnlinePlayers();
         ArrayList<Player> detected = new ArrayList<Player>();
@@ -135,5 +138,7 @@ public class CmdScan extends Command {
         } else {
             this.sendPlayerMessage(sender, this.getLocalString("SCAN_CLEAN"));
         }
+
+        });
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017 Jacob Keep (Jnk1296). All rights reserved.
+ * Copyright © 2014 Jacob Keep (Jnk1296). All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,33 +28,40 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-package net.risenphoenix.ipcheck.objects;
+package net.risenphoenix.commons.configuration;
 
-import java.util.ArrayList;
+public class ConfigurationOption {
 
-public class IPObject {
+    private ConfigOptionType type;
+    private String identifier;
 
-    private String IP;
-    private ArrayList<String> Users;
-
-    public IPObject(String IP, ArrayList<String> Users) {
-        this.IP = IP;
-        this.Users = Users;
+    public ConfigurationOption(ConfigOptionType type, String identifier) {
+        this.type = type;
+        this.identifier = identifier;
     }
 
-    public IPObject(String IP) {
-        this.IP = IP;
+    public final ConfigOptionType getType() {
+        return this.type;
     }
 
-    public final int getNumberOfUsers() {
-        return this.Users.size();
+    public final String getIdentifier() {
+        return this.identifier;
     }
 
-    public final String getIP() {
-        return this.IP;
+    public enum ConfigOptionType {
+        String,
+        Integer,
+        Boolean,
+        Long,
+        Double,
+        StringList,
+        IntegerList,
+        BooleanList,
+        FloatList,
+        LongList,
+        DoubleList,
+        CharList,
+        ByteList;
     }
 
-    public final ArrayList<String> getUsers() {
-        return this.Users;
-    }
 }

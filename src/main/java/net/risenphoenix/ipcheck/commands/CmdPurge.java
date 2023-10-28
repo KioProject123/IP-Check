@@ -35,6 +35,7 @@ import net.risenphoenix.commons.commands.Command;
 import net.risenphoenix.commons.commands.CommandType;
 import net.risenphoenix.ipcheck.IPCheck;
 import net.risenphoenix.ipcheck.database.DatabaseController;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.permissions.Permission;
 
@@ -58,6 +59,8 @@ public class CmdPurge extends Command {
 
     @Override
     public void onExecute(CommandSender sender, String[] args) {
+        Bukkit.getScheduler().runTaskAsynchronously(IPCheck.getInstance(), () -> {
+
         // Regex for differentiating between IP and username
         String ip_filter = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}";
 
@@ -85,5 +88,7 @@ public class CmdPurge extends Command {
                 sendPlayerMessage(sender, getLocalString("NO_FIND"));
             }
         }
+
+        });
     }
 }

@@ -58,7 +58,7 @@ public class DatabaseController extends DatabaseManager {
     // MySQL Initializer
     public DatabaseController(final Plugin plugin, String hostname, int port,
                               String database, String username, String pwd) {
-        super(plugin, hostname, port, database, username, pwd);
+        super(plugin, hostname, port, database, username, pwd, 1);
 
 
         // Enable Debugging to allow us to view the dynamic SQL queries
@@ -97,19 +97,11 @@ public class DatabaseController extends DatabaseManager {
                 "username TEXT," +
                 "uuid TEXT," +
                 "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                "banmessage TEXT," +
-                "banned INTEGER DEFAULT 0," +
-                "exempted INTEGER DEFAULT 0," +
-                "rejoinexempt INTEGER DEFAULT 0," +
-                "protected INTEGER DEFAULT 0," +
                 "PRIMARY KEY(username));";
 
         String TABLE_IPC_IP = "CREATE TABLE IF NOT EXISTS ipcheck_ip ( " +
                 "ip TEXT," +
                 "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                "banned INTEGER DEFAULT 0," +
-                "exempted INTEGER DEFAULT 0," +
-                "rejoinexempt INTEGER DEFAULT 0," +
                 "PRIMARY KEY(ip));";
 
         this.executeStatement(new StatementObject(this.getPlugin(),
@@ -135,20 +127,12 @@ public class DatabaseController extends DatabaseManager {
                 "username varchar(255) NOT NULL," +
                 "uuid varchar(255)," +
                 "timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
-                "banmessage varchar(255)," +
-                "banned bit(1) NOT NULL DEFAULT b'0'," +
-                "exempted bit(1) NOT NULL DEFAULT b'0'," +
-                "rejoinexempt bit(1) NOT NULL DEFAULT b'0'," +
-                "protected bit(1) NOT NULL DEFAULT b'0'," +
                 "PRIMARY KEY (username)" +
                 ");";
 
         String TABLE_IPC_IP = "CREATE TABLE IF NOT EXISTS ipcheck_ip ( " +
                 "ip varchar(15) NOT NULL," +
                 "timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP," +
-                "banned bit(1) NOT NULL DEFAULT b'0'," +
-                "exempted bit(1) NOT NULL DEFAULT b'0'," +
-                "rejoinexempt bit(1) NOT NULL DEFAULT b'0'," +
                 "PRIMARY KEY (ip)" +
                 ");";
 
@@ -246,129 +230,6 @@ public class DatabaseController extends DatabaseManager {
                 STMT_2, new Object[]{player.toLowerCase()}));
     }
 
-    // Exemption Methods
-
-    public final void exemptPlayer(String player) {
-        String SQL = "update ipcheck_user set exempted=1 where " +
-                "lower(username) = ?";
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{player.toLowerCase()}));
-    }
-
-    public final void unexemptPlayer(String player) {
-        String SQL = "update ipcheck_user set exempted=0 where " +
-                "lower(username) = ?";
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{player.toLowerCase()}));
-    }
-
-    public final boolean isExemptPlayer(String player) {
-        String SQL = "select exempted from ipcheck_user where " +
-                "lower(username) = ?";
-
-        QueryFilter filter = new QueryFilter() {
-            @Override
-            public Object onExecute(ResultSet res) {
-                boolean isExempt = false;
-
-                try {
-                    while (res.next()) {
-                        int exempt = Integer.parseInt(res.getString("exempted"));
-                        isExempt = (exempt == 1);
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return isExempt;
-            }
-        };
-
-        return (Boolean) this.executeQuery(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{player.toLowerCase()}), filter);
-    }
-
-    public ArrayList<String> getPlayerExemptList() {
-        String SQL = "select username from ipcheck_user where exempted=1";
-
-        QueryFilter filter = new QueryFilter() {
-            @Override
-            public Object onExecute(ResultSet res) {
-                ArrayList<String> users = new ArrayList<String>();
-
-                try {
-                    while (res.next()) {
-                        users.add(res.getString("username"));
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return users;
-            }
-        };
-
-        return (ArrayList<String>) this.executeQuery(new StatementObject(
-                this.getPlugin(), SQL), filter);
-    }
-
-    // Ban Methods
-
-    public final void banPlayer(String player, String message) {
-        String SQL = "update ipcheck_user set banned=1, banmessage = ? where " +
-                "lower(username) = ?";
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{message, player.toLowerCase()}));
-    }
-
-    public final void batchBanPlayers(String list, String msg, Boolean ban) {
-        String SQL = "update ipcheck_user set banned = ?, banmessage = ? " +
-                "where lower(username) = '" + list.toLowerCase();
-
-        int bit = (ban) ? 1 : 0;
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{bit, msg}));
-    }
-
-    public final void unbanPlayer(String player) {
-        String SQL = "update ipcheck_user set banned = 0 where " +
-                "lower(username) = ?";
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{player.toLowerCase()}));
-    }
-
-    public final boolean isBannedPlayer(String player) {
-        String SQL = "select banned from ipcheck_user where " +
-                "lower(username) = ?";
-
-        QueryFilter filter = new QueryFilter() {
-            @Override
-            public Object onExecute(ResultSet res) {
-                boolean isBanned = false;
-
-                try {
-                    while (res.next()) {
-                        int banned = Integer.parseInt(res.getString("banned"));
-                        isBanned = (banned == 1);
-                        break;
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return isBanned;
-            }
-        };
-
-        return (Boolean) this.executeQuery(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{player.toLowerCase()}), filter);
-    }
-
     public final boolean isValidPlayer(String player) {
         String SQL = "select username from ipcheck_user where " +
                 "lower(username) = ?";
@@ -390,32 +251,6 @@ public class DatabaseController extends DatabaseManager {
                 SQL, new Object[]{player.toLowerCase()}), filter);
     }
 
-    public final String getBanMessage(String player) {
-        String SQL = "select banmessage from ipcheck_user where " +
-                "lower(username) = ?";
-
-        QueryFilter filter = new QueryFilter() {
-            @Override
-            public Object onExecute(ResultSet res) {
-                String message = null;
-
-                try {
-                    while (res.next()) {
-                        message = res.getString("banmessage");
-                        break;
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return message;
-            }
-        };
-
-        return (String) this.executeQuery(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{player.toLowerCase()}), filter);
-    }
-
     /* IP Methods */
 
     public final void purgeIP(String ip) {
@@ -427,119 +262,6 @@ public class DatabaseController extends DatabaseManager {
 
         this.executeStatement(new StatementObject(this.getPlugin(),
                 STMT_2, new Object[]{ip}));
-    }
-
-    public final void exemptIP(String ip) {
-        String SQL = "update ipcheck_ip set exempted = 1 where ip = ?";
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{ip}));
-    }
-
-    public final void unexemptIP(String ip) {
-        String SQL = "update ipcheck_ip set exempted = 0 where ip = ?";
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{ip}));
-    }
-
-    public final boolean isExemptIP(String ip) {
-        String SQL = "select exempted from ipcheck_ip where ip = ?";
-
-        QueryFilter filter = new QueryFilter() {
-            @Override
-            public Object onExecute(ResultSet res) {
-                boolean isExempt = false;
-
-                try {
-                    while (res.next()) {
-                        int exempt = Integer.parseInt(res.getString("exempted"));
-                        isExempt = (exempt == 1);
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return isExempt;
-            }
-        };
-
-        return (Boolean) this.executeQuery(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{ip}), filter);
-    }
-
-    public ArrayList<String> getIPExemptList() {
-        String SQL = "select ip from ipcheck_ip where exempted=1";
-
-        QueryFilter filter = new QueryFilter() {
-            @Override
-            public Object onExecute(ResultSet res) {
-                ArrayList<String> ips = new ArrayList<String>();
-
-                try {
-                    while (res.next()) {
-                        ips.add(res.getString("ip"));
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return ips;
-            }
-        };
-
-        return (ArrayList<String>) this.executeQuery(new StatementObject(
-                this.getPlugin(), SQL), filter);
-    }
-
-    public final void banIP(String ip) {
-        String SQL = "update ipcheck_ip set banned = 1 where ip = ?";
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{ip}));
-    }
-
-    public final void batchBanIPs(String list, boolean banning) {
-        String SQL = "update ipcheck_ip set banned = ? where ip = '"
-                + list.toLowerCase();
-
-        int bit = (banning) ? 1 : 0;
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{bit}));
-    }
-
-    public final void unbanIP(String ip) {
-        String SQL = "update ipcheck_ip set banned = 0 where ip = ?";
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{ip}));
-    }
-
-    public final boolean isBannedIP(String ip) {
-        String SQL = "select banned from ipcheck_ip where ip = ?";
-
-        QueryFilter filter = new QueryFilter() {
-            @Override
-            public Object onExecute(ResultSet res) {
-                boolean isBanned = false;
-
-                try {
-                    while (res.next()) {
-                        int banned = Integer.parseInt(res.getString("banned"));
-                        isBanned = (banned == 1);
-                        break;
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return isBanned;
-            }
-        };
-
-        return (Boolean) this.executeQuery(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{ip}), filter);
     }
 
     /* Other Methods */
@@ -562,8 +284,7 @@ public class DatabaseController extends DatabaseManager {
                     e.printStackTrace();
                 }
 
-                return new IPObject(ip, users, dbC.isBannedIP(ip),
-                        dbC.isExemptIP(ip), dbC.isRejoinExemptIP(ip));
+                return new IPObject(ip, users);
             }
         };
 
@@ -573,10 +294,6 @@ public class DatabaseController extends DatabaseManager {
 
     public final UserObject getUserObject(String player) {
         String SQL = "select ip from ipcheck_log where lower(username) = ?";
-        boolean isBanned = this.isBannedPlayer(player);
-        boolean isExempt = this.isExemptPlayer(player);
-        boolean isRejoin = this.isRejoinExemptPlayer(player);
-        boolean isProtec = this.isProtectedPlayer(player);
         UUID uuid = this.getUUID(player);
 
         QueryFilter filter = new QueryFilter() {
@@ -602,8 +319,7 @@ public class DatabaseController extends DatabaseManager {
                 new StatementObject(this.getPlugin(), SQL, new Object[]{
                         player.toLowerCase()}), filter);
 
-        return new UserObject(player.toLowerCase(), uuid, ips, isBanned,
-                isExempt, isRejoin, isProtec);
+        return new UserObject(player.toLowerCase(), uuid, ips);
     }
 
     public final ArrayList<String> getPlayersByUUID(UUID uuid) {
@@ -744,309 +460,6 @@ public class DatabaseController extends DatabaseManager {
 
         return (String) this.executeQuery(new StatementObject(this.getPlugin(),
                 SQL), filter);
-    }
-
-    public final ArrayList<UserObject> getPlayersByDate(String dateOne,
-                                                        String dateTwo) {
-        String SQL = "select username from ipcheck_user where timestamp >= ? " +
-                "and timestamp <= ?";
-
-        QueryFilter filter = new QueryFilter(new Object[]{this}) {
-            @Override
-            public Object onExecute(ResultSet res) {
-                DatabaseController dbC = (DatabaseController) this.getData()[0];
-                ArrayList<UserObject> users = new ArrayList<UserObject>();
-
-                try {
-                    while (res.next()) {
-                        String user = res.getString("username");
-                        users.add(new UserObject(user,
-                                dbC.isBannedPlayer(user)));
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return users;
-            }
-        };
-
-        return (ArrayList<UserObject>) this.executeQuery(new StatementObject(
-                this.getPlugin(), SQL, new Object[]{dateOne, dateTwo}), filter);
-    }
-
-    public final ArrayList<UserObject> fetchAllPlayers() {
-        String SQL = "select * from ipcheck_user";
-
-        QueryFilter filter = new QueryFilter(new Object[]{this}) {
-            @Override
-            public Object onExecute(ResultSet res) {
-                DatabaseController dbC = (DatabaseController) this.getData()[0];
-                ArrayList<UserObject> users = new ArrayList<UserObject>();
-
-                try {
-                    while (res.next()) {
-                        String user = res.getString("username");
-                        users.add(new UserObject(user,
-                                dbC.isBannedPlayer(user)));
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return users;
-            }
-        };
-
-        return (ArrayList<UserObject>) this.executeQuery(new StatementObject(
-                this.getPlugin(), SQL), filter);
-    }
-
-    public final ArrayList<UserObject> fetchBannedPlayers() {
-        String SQL = "select * from ipcheck_user";
-
-        QueryFilter filter = new QueryFilter(new Object[]{this}) {
-            @Override
-            public Object onExecute(ResultSet res) {
-                DatabaseController dbC = (DatabaseController) this.getData()[0];
-                ArrayList<UserObject> users = new ArrayList<>();
-
-                try {
-                    while (res.next()) {
-                        if (res.getString("banned").equals("1")) {
-                            String user = res.getString("username");
-                            users.add(new UserObject(user,
-                                    dbC.isBannedPlayer(user)));
-                        }
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return users;
-            }
-        };
-
-        return (ArrayList<UserObject>) this.executeQuery(new StatementObject(
-                this.getPlugin(), SQL), filter);
-    }
-
-
-    public final ArrayList<IPObject> fetchAllIPs() {
-        String SQL = "select * from ipcheck_ip";
-
-        QueryFilter filter = new QueryFilter(new Object[]{this}) {
-            @Override
-            public Object onExecute(ResultSet res) {
-                DatabaseController dbC = (DatabaseController) this.getData()[0];
-                ArrayList<IPObject> ips = new ArrayList<IPObject>();
-
-                try {
-                    while (res.next()) {
-                        String ip = res.getString("ip");
-                        ips.add(new IPObject(ip, dbC.isBannedIP(ip)));
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return ips;
-            }
-        };
-
-        return (ArrayList<IPObject>) this.executeQuery(new StatementObject(
-                this.getPlugin(), SQL), filter);
-    }
-
-    public final ArrayList<IPObject> fetchBannedIPs() {
-        String SQL = "select * from ipcheck_ip";
-
-        QueryFilter filter = new QueryFilter(new Object[]{this}) {
-            @Override
-            public Object onExecute(ResultSet res) {
-                DatabaseController dbC = (DatabaseController) this.getData()[0];
-                ArrayList<IPObject> ips = new ArrayList<IPObject>();
-
-                try {
-                    while (res.next()) {
-                        if (res.getString("banned").equals("1")) {
-                            String ip = res.getString("ip");
-                            ips.add(new IPObject(ip, dbC.isBannedIP(ip)));
-                        }
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return ips;
-            }
-        };
-
-        return (ArrayList<IPObject>) this.executeQuery(new StatementObject(
-                this.getPlugin(), SQL), filter);
-    }
-
-    public final void setRejoinExemptPlayer(String player, boolean exempt) {
-        String SQL = "update ipcheck_user set rejoinexempt = ? " +
-                "where username = ?";
-        int value = (exempt) ? 1 : 0;
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{value, player.toLowerCase()}));
-    }
-
-    public final boolean isRejoinExemptPlayer(String player) {
-        String SQL = "select rejoinexempt from ipcheck_user where username = ?";
-
-        QueryFilter filter = new QueryFilter() {
-            @Override
-            public Object onExecute(ResultSet res) {
-                boolean isExempt = false;
-
-                try {
-                    if (res.next()) {
-                        isExempt = (res.getString("rejoinexempt").equals("1"));
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return isExempt;
-            }
-        };
-
-        return (boolean) this.executeQuery(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{player.toLowerCase()}), filter);
-    }
-
-    public final void setRejoinExemptIP(String ip, boolean exempt) {
-        String SQL = "update ipcheck_ip set rejoinexempt = ? where ip = ?";
-        int value = (exempt) ? 1 : 0;
-
-        this.executeStatement(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{value, ip}));
-    }
-
-    public final boolean isRejoinExemptIP(String ip) {
-        String SQL = "select rejoinexempt from ipcheck_ip where ip = ?";
-
-        QueryFilter filter = new QueryFilter() {
-            @Override
-            public Object onExecute(ResultSet res) {
-                boolean isExempt = false;
-
-                try {
-                    if (res.next()) {
-                        isExempt = (res.getString("rejoinexempt").equals("1"));
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return isExempt;
-            }
-        };
-
-        return (boolean) this.executeQuery(new StatementObject(this.getPlugin(),
-                SQL, new Object[]{ip}), filter);
-    }
-
-    public final ArrayList<UserObject> fetchRejoinExemptPlayers() {
-        String SQL = "select username FROM ipcheck_user WHERE rejoinexempt = 1";
-
-        QueryFilter filter = new QueryFilter(new Object[]{this}){
-            @Override
-            public Object onExecute(ResultSet res) {
-                // IPO Storage
-                ArrayList<UserObject> upos = new ArrayList<>();
-
-                // Fetch DatabaseController from Data
-                DatabaseController dbc = (DatabaseController) getData()[0];
-
-                // Fetch UPOs and append to storage
-                try {
-                    while (res.next())
-                        upos.add(dbc.getUserObject(res.getString("username")));
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return upos;
-            }
-        };
-
-        // Fetch Return Value
-        return (ArrayList<UserObject>) executeQuery(new StatementObject(
-                this.getPlugin(), SQL), filter);
-    }
-
-    public final ArrayList<IPObject> fetchRejoinExemptIPs() {
-        String SQL = "select ip FROM ipcheck_ip WHERE rejoinexempt = 1";
-
-        QueryFilter filter = new QueryFilter(new Object[]{this}){
-            @Override
-            public Object onExecute(ResultSet res) {
-                // IPO Storage
-                ArrayList<IPObject> ipos = new ArrayList<>();
-
-                // Fetch DatabaseController from Data
-                DatabaseController dbc = (DatabaseController) getData()[0];
-
-                // Fetch IPOs and append to storage
-                try {
-                    while (res.next())
-                        ipos.add(dbc.getIPObject(res.getString("ip")));
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return ipos;
-            }
-        };
-
-        // Fetch Return Value
-        return (ArrayList<IPObject>) executeQuery(new StatementObject(
-                this.getPlugin(), SQL), filter);
-    }
-
-    public final void protectPlayer(String player) {
-        String SQL = "update ipcheck_user set protected=1 where " +
-                "lower(username) = ?";
-
-        executeStatement(new StatementObject(this.getPlugin(), SQL,
-                new Object[]{player.toLowerCase()}));
-    }
-
-    public final void unprotectPlayer(String player) {
-        String SQL = "update ipcheck_user set protected=0 where " +
-                "lower(username) = ?";
-
-        executeStatement(new StatementObject(this.getPlugin(), SQL,
-                new Object[]{player.toLowerCase()}));
-    }
-
-    public final boolean isProtectedPlayer(String player) {
-        String SQL = "select protected FROM ipcheck_user WHERE " +
-                "lower(username) = ?";
-
-        QueryFilter filter = new QueryFilter() {
-            @Override
-            public Object onExecute(ResultSet res) {
-                boolean result = false;
-
-                try {
-                    if (res.next()) result =
-                            res.getString("protected").equals("1");
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-
-                return result;
-            }
-        };
-
-        return (boolean) executeQuery(new StatementObject(this.getPlugin(), SQL,
-                new Object[]{player.toLowerCase()}), filter);
     }
 
     private void executeColumnUpdate() {

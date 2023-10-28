@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017 Jacob Keep (Jnk1296). All rights reserved.
+ * Copyright © 2014 Jacob Keep (Jnk1296). All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,33 +28,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-package net.risenphoenix.ipcheck.objects;
+package net.risenphoenix.commons.commands;
 
-import java.util.ArrayList;
+public class ParseResult {
 
-public class IPObject {
+    private final Command cmd;
+    private final ResultType type;
 
-    private String IP;
-    private ArrayList<String> Users;
-
-    public IPObject(String IP, ArrayList<String> Users) {
-        this.IP = IP;
-        this.Users = Users;
+    public ParseResult(final ResultType type, final Command cmd) {
+        this.type = type;
+        this.cmd = cmd;
     }
 
-    public IPObject(String IP) {
-        this.IP = IP;
+    public final ResultType getResult() {
+        return this.type;
     }
 
-    public final int getNumberOfUsers() {
-        return this.Users.size();
-    }
-
-    public final String getIP() {
-        return this.IP;
-    }
-
-    public final ArrayList<String> getUsers() {
-        return this.Users;
+    public final Command getCommand() {
+        return this.cmd;
     }
 }

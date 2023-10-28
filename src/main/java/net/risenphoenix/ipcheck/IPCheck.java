@@ -31,19 +31,10 @@
 package net.risenphoenix.ipcheck;
 
 import net.risenphoenix.commons.Plugin;
-import net.risenphoenix.ipcheck.commands.block.BlockManager;
 import net.risenphoenix.ipcheck.database.DatabaseController;
-import net.risenphoenix.ipcheck.events.PlayerLoginListener;
-import net.risenphoenix.ipcheck.objects.GeoIPObject;
-import net.risenphoenix.ipcheck.objects.StatsObject;
 import net.risenphoenix.ipcheck.stores.CmdStore;
 import net.risenphoenix.ipcheck.stores.ConfigStore;
 import net.risenphoenix.ipcheck.stores.LocaleStore;
-import net.risenphoenix.ipcheck.util.DateStamp;
-import net.risenphoenix.ipcheck.util.Messages;
-import net.risenphoenix.ipcheck.util.Metrics;
-
-import net.risenphoenix.ipcheck.util.Updater;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -52,7 +43,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.logging.Level;
 
@@ -63,29 +53,15 @@ public class IPCheck extends Plugin implements Listener {
     private DatabaseController dbController;
     private ConfigStore config;
 
-    // Updater and Metrics Objects
-    private Updater updater;
-    private Metrics metrics;
-
-    // Statistics Object
-    private StatsObject statsObject;
-
-    // GeoIP Service Objects
-    private GeoIPObject geoIPOBject = null;
-    private BlockManager blockManager = null;
-
     // Control used mainly in the event of an in-plugin Reload.
     private boolean hasRegistered = false;
 
-    // Used for Development Purposes Only (hard disable for automatic updater)
-    private boolean isDevBuild = false;
-
-    // Configuration Version Check
-    private int configVersion = 5;
-
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerLogin(PlayerLoginEvent e) {
-        new PlayerLoginListener(this, e);
+        // Fetch IP Address and Player
+        Player player = e.getPlayer();
+        String address = e.getAddress().getHostAddress();
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> dbController.log(player.getUniqueId(), player.getName(), address));
     }
 
     @Override
@@ -110,20 +86,6 @@ public class IPCheck extends Plugin implements Listener {
         LocaleStore locStore = new LocaleStore(this);
         this.getLocalizationManager().appendLocalizationStore(locStore);
 
-        // Check Configuration Version, warn if Mismatch
-        if (this.getConfigurationManager()
-                .getInteger("config-version") != this.configVersion) {
-            sendConsoleMessage(Level.WARNING, getLocalizationManager()
-                    .getLocalString("CONFIG_VER_MISMATCH"));
-        }
-
-        // Initialize GeoIP Services
-        if (this.getConfigurationManager().getBoolean("use-geoip-services")) {
-            this.geoIPOBject = new GeoIPObject(this);
-        }
-
-        this.blockManager = new BlockManager(this);
-
         // Initialize Database Controller
         if (this.getConfigurationManager().getBoolean("use-mysql")) {
             // MySQL Database Initialization
@@ -142,37 +104,6 @@ public class IPCheck extends Plugin implements Listener {
         // Initialize Commands
         CmdStore cmdStore = new CmdStore(this);
         this.getCommandManager().registerStore(cmdStore);
-
-        // Initialize Statistics
-        this.statsObject = new StatsObject(this);
-
-        // Development Build Hook
-        if (!this.isDevBuild) {
-            // Auto-Update Checker
-            if (!getConfigurationManager()
-                    .getBoolean("disable-update-detection")) {
-                updater = new Updater(this, 55121, this.getFile(),
-                        Updater.UpdateType.DEFAULT, true);
-            }
-
-            // Metrics Monitoring
-            if (!getConfigurationManager()
-                    .getBoolean("disable-metrics-monitoring")) {
-                try {
-                    metrics = new Metrics(this);
-                    metrics.start();
-                } catch (IOException e) {
-                    sendConsoleMessage(Level.SEVERE, getLocalizationManager()
-                            .getLocalString("METRICS_ERR"));
-                }
-            }
-        } else {
-            sendConsoleMessage(Level.INFO, getLocalizationManager()
-                    .getLocalString("DEV_BUILD_WARN"));
-        }
-
-        // Display Random Message
-        showRandomMessage();
     }
 
     @Override
@@ -188,35 +119,12 @@ public class IPCheck extends Plugin implements Listener {
         return this.dbController;
     }
 
-    public StatsObject getStatisticsObject() {
-        return this.statsObject;
-    }
-
-    public GeoIPObject getGeoIPObject() {
-        return this.geoIPOBject;
-    }
-
-    public BlockManager getBlockManager() {
-        return this.blockManager;
-    }
-
     public String getVersion() {
         return "2.0.7";
     }
 
     public int getBuildNumber() {
         return 2084;
-    }
-
-    private void showRandomMessage() {
-        DateStamp ds = new DateStamp();
-        String ran = Messages.getSeasonalMessage(ds.getCustomStamp("MM-dd"));
-
-        if (ran != null) {
-            this.sendConsoleMessage(Level.INFO, ran);
-        } else {
-            this.sendConsoleMessage(Level.INFO, Messages.getRandomMessage());
-        }
     }
 
     public final Player[] getOnlinePlayers() {
