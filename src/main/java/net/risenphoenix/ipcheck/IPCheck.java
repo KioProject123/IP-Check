@@ -41,7 +41,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.util.Collection;
 import java.util.logging.Level;
@@ -57,10 +57,10 @@ public class IPCheck extends Plugin implements Listener {
     private boolean hasRegistered = false;
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPlayerLogin(PlayerLoginEvent e) {
+    public void onPlayerLogin(PlayerJoinEvent e) {
         // Fetch IP Address and Player
         Player player = e.getPlayer();
-        String address = e.getAddress().getHostAddress();
+        String address = player.getAddress().getAddress().getHostAddress();
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> dbController.log(player.getUniqueId(), player.getName(), address));
     }
 
